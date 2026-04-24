@@ -1,0 +1,94 @@
+name: Bug Report
+description: Report a bug in OwlPay Wallet Pro CLI
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please fill out the information below.
+
+        **Never include private keys, mnemonics, or session tokens.**
+
+  - type: input
+    id: version
+    attributes:
+      label: CLI Version
+      description: "Output of `owlp --version`"
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - prod
+        - stage
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "macOS 15.1 / Ubuntu 24.04 / Windows 11"
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node.js Version
+      description: "Output of `node --version`"
+      placeholder: "v22.0.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands or steps to reproduce the issue.
+      placeholder: |
+        1. Run `owlp balance --json`
+        2. See error "..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error output
+      description: Paste the full error message or `--debug` output. **Remove any private keys or tokens.**
+      render: shell
+    validations:
+      required: false
+
+  - type: dropdown
+    id: usage
+    attributes:
+      label: How are you using the CLI?
+      options:
+        - Manually (human in terminal)
+        - Via AI agent (Claude Code, Cursor, etc.)
+        - Scripted (shell script, CI/CD, etc.)
+    validations:
+      required: false

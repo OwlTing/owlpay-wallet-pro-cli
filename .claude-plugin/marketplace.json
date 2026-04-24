@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "owlpay-wallet-pro-cli",
+  "description": "Agent skills for the OwlPay Wallet Pro CLI (owlp) — crypto wallet management, balance queries, transfers, and onboarding",
+  "owner": {
+    "name": "OwlPay",
+    "email": "support@owlpay.com"
+  },
+  "plugins": [
+    {
+      "name": "owlp-cli",
+      "description": "Agent skill for managing crypto wallets via the OwlPay Wallet Pro CLI (owlp)",
+      "category": "development",
+      "source": ".",
+      "homepage": "https://github.com/OwlTing/owlpay-wallet-pro-cli"
+    }
+  ]
+}

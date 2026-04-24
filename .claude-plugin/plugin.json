@@ -1,0 +1,12 @@
+{
+  "name": "owlpay-wallet-pro-cli",
+  "version": "1.0.0",
+  "description": "Agent skill for managing crypto wallets via the OwlPay Wallet Pro CLI (owlp)",
+  "author": {
+    "name": "OwlPay",
+    "url": "https://github.com/OwlTing/owlpay-wallet-pro-cli"
+  },
+  "repository": "https://github.com/OwlTing/owlpay-wallet-pro-cli",
+  "license": "Apache-2.0",
+  "skills": "./skills/"
+}
