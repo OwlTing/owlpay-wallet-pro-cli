@@ -4,7 +4,7 @@ description: Use the OwlPay Wallet Pro CLI (owlp) to manage crypto wallets, chec
 license: Apache-2.0
 metadata:
   author: owlpay
-  version: "0.5.13"
+  version: "0.5.14"
 ---
 
 OwlPay Wallet Pro CLI agent skill.
@@ -25,7 +25,7 @@ If the command is not found:
 
 ```bash
 npm install -g @owlpay/owlp-cli
-owlp -V   # should print "OwlPay Wallet Pro CLI v0.5.13" or later
+owlp -V   # should print "OwlPay Wallet Pro CLI v0.5.14" or later
 ```
 
 ### First-Run Checklist
