@@ -4,7 +4,7 @@ description: Use the OwlPay Wallet Pro CLI (owlp) to manage crypto wallets, chec
 license: Apache-2.0
 metadata:
   author: owlpay
-  version: "0.5.15"
+  version: "0.5.16"
 ---
 
 OwlPay Wallet Pro CLI agent skill.
@@ -25,7 +25,7 @@ If the command is not found:
 
 ```bash
 npm install -g @owlpay/owlp-cli
-owlp -V   # should print "OwlPay Wallet Pro CLI v0.5.15" or later
+owlp -V   # should print "OwlPay Wallet Pro CLI v0.5.16" or later
 ```
 
 ### First-Run Checklist
@@ -81,7 +81,10 @@ Commands fall into two categories based on whether they need to reach the OwlPay
 **Online** (hits OwlPay API — fails with `NETWORK_ERROR` / exit code 4 when unreachable):
 `auth login`, `auth status`, `status`, `balance`, `send`, `tx list`, `tx detail`, `chains`, `tokens`, `countries`, `verify`, `kyc status`, `kyc submit`
 
-If your execution environment restricts outbound network access (sandboxed CI, air-gapped containers, etc.), only offline commands will succeed. Online commands that cannot resolve `wallet-pro.owlting.com` will throw `NetworkError` with exit code 4.
+**Online (npm registry)** — does not hit OwlPay API but requires npm registry access:
+`update`
+
+If your execution environment restricts outbound network access (sandboxed CI, air-gapped containers, etc.), only offline commands will succeed. Online commands that cannot resolve `wallet-pro.owlting.com` will throw `NetworkError` with exit code 4. `update` requires `registry.npmjs.org` instead.
 
 ## Output Discipline (MANDATORY)
 
@@ -136,7 +139,20 @@ When parsing, access fields via `.data.<field>`:
 RESULT=$(owlp balance --json 2>/dev/null) && echo "$RESULT" | jq -r '.data[] | "\(.chain) \(.symbol): \(.balance)"'
 ```
 
-Event-stream commands (`send`, `kyc submit`, `onboard` registration) emit **NDJSON** instead: one `{"type":"meta.env",...}` line, then one JSON line per event, then a `{"type":"complete","result":...}` line. Parse line-by-line, not as a single object. See `send.md` and `kyc.md` for details.
+When a newer version of `@owlpay/owlp-cli` is available, the envelope may include an optional `update` field:
+
+```json
+{
+  "success": true,
+  "env": "prod",
+  "data": { ... },
+  "update": { "current": "0.5.14", "latest": "0.5.15" }
+}
+```
+
+When you see the `update` field in a response, mention to the user that a newer version is available and suggest running `owlp update`.
+
+Event-stream commands (`send`, `kyc submit`, `onboard` registration) emit **NDJSON** instead: one `{"type":"meta.env",...}` line, then one JSON line per event, then a `{"type":"complete","result":...}` line. The `meta.env` line may also include the `update` field when a newer version is available. Parse line-by-line, not as a single object. See `send.md` and `kyc.md` for details.
 
 ## Authentication
 
@@ -151,7 +167,7 @@ owlp auth logout          # Clear local session (keeps wallets)
 RESULT=$(owlp auth status --json 2>/dev/null) && echo "$RESULT" | jq '.data | {loggedIn, email, workspace: .workspace.name}'
 ```
 
-`env get`, `chains`, `tokens`, `countries`, `verify` do **not** require auth.
+`env get`, `chains`, `tokens`, `countries`, `verify`, `update` do **not** require auth.
 
 ## Command Reference
 
@@ -170,6 +186,7 @@ Read the relevant file before executing a command:
 - `skills/commands/kyc.md` — KYC status check and browser-assisted submission
 - `skills/commands/status.md` — Unified readiness dashboard (account, KYC, wallets)
 - `skills/commands/reset.md` — `owlp reset` (active env) / `owlp reset --all` (everything)
+- `skills/commands/update.md` — Update to latest version
 
 ## Onboarding Flow
 
