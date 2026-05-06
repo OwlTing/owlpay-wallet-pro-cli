@@ -11,7 +11,11 @@ The flow has four agent-facing stages:
 
 `owlp deposit` is the provider-shaped human orchestrator for the same flow. `owlp deposit start` remains as a compatibility alias. In TTY human mode it is a step-by-step wizard. The first step lists local wallet chain destinations from the user's bound wallets, for example `main · Stellar · GABC...1234`; selecting one fills both `--chain` and `--destination-address`. Missing amount mode/value is collected before quote. For debit-card, the wizard selects an active usable card automatically only when exactly one exists; when multiple active cards exist, it asks the user to choose the funding card. The quote preview displays the selected funding card summary before asking `Submit this deposit?`; declining stops without submitting. In this milestone only `debit-card` is registered, so `--method` may be omitted and the CLI resolves to the sole provider. When multiple providers are registered in a future release, agent mode must pass `--method`; the CLI returns `INPUT_REQUIRED` instead of silently choosing one. If no active usable card exists, it exits with `INPUT_REQUIRED` and tells the user to run `owlp deposit card add`.
 
+In this MVP, deposits are limited to user-owned wallet destinations. `--destination-address` is accepted only when it matches a chain address from the local CLI wallet list for the selected chain. Arbitrary external deposit addresses are intentionally not exposed yet.
+
 Requires login. Submitting a deposit requires KYC verified — backend returns `KYC_REQUIRED` (HTTP 403) otherwise.
+
+Environment handling follows the global CLI contract: `--stage`, `owlp env set stage`, or default `prod` select the active Wallet Pro API, cli-service URL, local auth, wallets, and idempotency namespace. Deposit examples are safe to validate on stage first, but command behavior must not rely on stage-only endpoints.
 
 ## Operating modes
 
@@ -34,16 +38,24 @@ Requires login. Submitting a deposit requires KYC verified — backend returns `
 | `--idempotency-key <key>` | Replay-safe key (default: random UUID; server has `idempotency.key` middleware) |
 | `--timeout <ms>` | Polling timeout in ms (default: 1800000 = 30 min, matches `CARD_BINDING_LINK_TTL`) |
 
-NDJSON sequence (happy path):
+NDJSON sequence (TTY happy path):
 
 ```
 {"type":"meta.env",...}
 {"type":"card.binding_url","url":"https://...","card_id":"<uuid>","ts":...}
-{"type":"card.browser_required","url":"...","ts":...}             # agent only
 {"type":"card.binding_polling","attempt":1,"status":"pending","ts":...}
 {"type":"card.binding_polling","attempt":2,"status":"pending","ts":...}
 {"type":"card.binding_active","card_id":"<uuid>","last4_digits":"4242","card_company":"VISA","ts":...}
 {"type":"complete","result":{"cardId":"<uuid>","status":"active","last4Digits":"4242","cardCompany":"VISA"},"ts":...}
+```
+
+Agent mode cannot perform the browser interaction. It emits the binding URL and exits:
+
+```
+{"type":"meta.env",...}
+{"type":"card.binding_url","url":"https://...","card_id":"<uuid>","ts":...}
+{"type":"card.browser_required","url":"https://...","ts":...}
+{"type":"error","code":"CARD_BINDING_BROWSER_REQUIRED","message":"Card binding requires browser interaction. Visit the URL, complete card binding, then run `owlp deposit card list`.","exitCode":3,"ts":...}
 ```
 
 Failure terminal: `expired | disabled | restricted` → `card.binding_failed` → exit 3 `CARD_BINDING_FAILED`.
@@ -76,12 +88,12 @@ Returns the standard `{success, env, data}` envelope. PII fields (`bin_number`, 
 | `--source-amount <usd>` | One of these | USD amount to spend |
 | `--destination-amount <usdc>` | One of these | USDC amount to receive |
 | `--destination-wallet <id>` | One of these | Wallet Pro internal wallet uuid only |
-| `--destination-address <addr>` | One of these | Chain address; use this for local CLI wallets |
+| `--destination-address <addr>` | One of these | Local CLI wallet chain address only |
 | `--confirm` | No | Submit after quote preview; without this, TTY asks after showing the preview and agent mode returns a dry-run preview |
 
 In human TTY mode, omitted destination fields are prompted from local wallet chain addresses. Selecting a local CLI wallet fills `--destination-address`, not `--destination-wallet`.
 
-In agent mode, prefer `--destination-address <chain-address>` when depositing to a wallet created or imported by this CLI. Do **not** pass a local wallet name, shortened label, or local wallet address alias to `--destination-wallet`; Wallet Pro treats that flag as an internal wallet uuid and may return `WALLET_FORBIDDEN` when the value is not a workspace wallet uuid. Use `--destination-wallet` only when you already have a Wallet Pro internal wallet uuid from the API.
+In agent mode, prefer `--destination-address <chain-address>` when depositing to a wallet created or imported by this CLI. The address must match `owlp wallet list` for the selected chain, otherwise the CLI returns `DESTINATION_ADDRESS_NOT_LOCAL` before quote/submit work starts. Do **not** pass a local wallet name, shortened label, or local wallet address alias to `--destination-wallet`; Wallet Pro treats that flag as an internal wallet uuid and may return `WALLET_FORBIDDEN` when the value is not a workspace wallet uuid. Use `--destination-wallet` only when you already have a Wallet Pro internal wallet uuid from the API.
 
 The wizard always displays the quote preview before asking whether to submit, unless `--confirm` was explicitly supplied. In agent mode, omitted required fields return `INPUT_REQUIRED`; agent mode never prompts.
 
@@ -92,7 +104,7 @@ Agent-mode happy-path preview:
 {"type":"deposit.start.method_selected","method":"debit-card","ts":...}
 {"type":"quote.start","method":"debit-card","chain":"stellar","ts":...}
 {"type":"quote.done","quote_id":"q-...","source_amount":"500","destination_amount":"498.50","effective_rate":"0.997000","expires_at":"2026-05-05T12:00:00Z","ts":...}
-{"type":"submit.preview","quote_id":"q-...","card_id":"card-...","card_last4_digits":"9904","card_company":"VISA","ts":...}
+{"type":"submit.preview","quote_id":"q-...","chain":"stellar","destination_type":"external_address","destination_address":"G...","card_id":"card-...","card_last4_digits":"9904","card_company":"VISA","ts":...}
 {"type":"complete","result":{"txUuid":"","state":"init","preview":{...}},"ts":...}
 ```
 
@@ -146,7 +158,7 @@ Server intentionally strips fee fields from the response (`DebitCardQuoteControl
 | `--card-id <id>` | Yes | Card id from `deposit card add` / `card list` |
 | `--chain <chain>` | Yes | Must match the quote (server overrides via `prepareForPipeline`, but validation requires it) |
 | `--destination-wallet <id>` | One of these | Wallet Pro internal wallet uuid only (sets `destination_type=internal_address`) |
-| `--destination-address <addr>` | One of these | Chain address; use this for local CLI wallets (sets `destination_type=external_address`) |
+| `--destination-address <addr>` | One of these | Local CLI wallet chain address only (sets `destination_type=external_address`) |
 | `--method <method>` | No while only one provider exists | Provider key. Required once multiple providers are available. |
 | `--idempotency-key <key>` | No | Replay-safe key (default: random UUID; **client-side**, server has no dedup middleware on `POST /transaction`) |
 | `--confirm` | No | Without this, returns dry-run preview (no API call) |
@@ -198,6 +210,8 @@ Terminal mapping:
 
 ## Agent Response Guidance
 
+- Prefer running one direct `owlp ... --json` command and reading the NDJSON events from the command output. Do not wrap normal user-facing runs in multi-line shell snippets with `OUT=...`, `CODE=$?`, `printf`, or `jq`; those wrappers are noisy in visible agent terminals. Use `jq` only when the user explicitly asks for machine extraction or when a script needs it.
+- For `deposit card add --json`, surface the `card.browser_required.url` to the user and explain that the command exits with `CARD_BINDING_BROWSER_REQUIRED` until a human completes the hosted browser flow.
 - **`card add` complete**: Confirm binding succeeded, name the card (`last4_digits` + `card_company`), and suggest `owlp deposit quote` next.
 - **`quote.done`**: Report `source_amount → destination_amount`, `effective_rate`, `expires_at`. Suggest `submit --quote-id <q> --confirm`.
 - **`submit.done`** (with `--confirm`): Report `tx_uuid`, suggest `owlp deposit watch <tx-uuid>` to follow it.
