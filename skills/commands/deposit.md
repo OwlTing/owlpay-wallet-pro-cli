@@ -75,11 +75,15 @@ Returns the standard `{success, env, data}` envelope. PII fields (`bin_number`, 
 | `--chain <chain>` | Yes | Destination chain (e.g. `ethereum`, `stellar`, `solana`) |
 | `--source-amount <usd>` | One of these | USD amount to spend |
 | `--destination-amount <usdc>` | One of these | USDC amount to receive |
-| `--destination-wallet <id>` | One of these | OwlPay wallet uuid |
-| `--destination-address <addr>` | One of these | External chain address |
+| `--destination-wallet <id>` | One of these | Wallet Pro internal wallet uuid only |
+| `--destination-address <addr>` | One of these | Chain address; use this for local CLI wallets |
 | `--confirm` | No | Submit after quote preview; without this, TTY asks after showing the preview and agent mode returns a dry-run preview |
 
-In human TTY mode, omitted destination fields are prompted from local wallet chain addresses. The wizard always displays the quote preview before asking whether to submit, unless `--confirm` was explicitly supplied. In agent mode, omitted required fields return `INPUT_REQUIRED`; agent mode never prompts.
+In human TTY mode, omitted destination fields are prompted from local wallet chain addresses. Selecting a local CLI wallet fills `--destination-address`, not `--destination-wallet`.
+
+In agent mode, prefer `--destination-address <chain-address>` when depositing to a wallet created or imported by this CLI. Do **not** pass a local wallet name, shortened label, or local wallet address alias to `--destination-wallet`; Wallet Pro treats that flag as an internal wallet uuid and may return `WALLET_FORBIDDEN` when the value is not a workspace wallet uuid. Use `--destination-wallet` only when you already have a Wallet Pro internal wallet uuid from the API.
+
+The wizard always displays the quote preview before asking whether to submit, unless `--confirm` was explicitly supplied. In agent mode, omitted required fields return `INPUT_REQUIRED`; agent mode never prompts.
 
 Agent-mode happy-path preview:
 
@@ -141,8 +145,8 @@ Server intentionally strips fee fields from the response (`DebitCardQuoteControl
 | `--quote-id <id>` | Yes | Quote id from `deposit quote` |
 | `--card-id <id>` | Yes | Card id from `deposit card add` / `card list` |
 | `--chain <chain>` | Yes | Must match the quote (server overrides via `prepareForPipeline`, but validation requires it) |
-| `--destination-wallet <id>` | One of these | OwlPay wallet uuid (sets `destination_type=internal_address`) |
-| `--destination-address <addr>` | One of these | External chain address (sets `destination_type=external_address`) |
+| `--destination-wallet <id>` | One of these | Wallet Pro internal wallet uuid only (sets `destination_type=internal_address`) |
+| `--destination-address <addr>` | One of these | Chain address; use this for local CLI wallets (sets `destination_type=external_address`) |
 | `--method <method>` | No while only one provider exists | Provider key. Required once multiple providers are available. |
 | `--idempotency-key <key>` | No | Replay-safe key (default: random UUID; **client-side**, server has no dedup middleware on `POST /transaction`) |
 | `--confirm` | No | Without this, returns dry-run preview (no API call) |
