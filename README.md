@@ -42,26 +42,28 @@ Creates your account (browser), wallet (terminal), and KYC record (browser) in o
 ```bash
 owlp balance                # Balances across all chains
 owlp send --to <addr> --amount 10 --token USDC --chain stellar
+owlp deposit                # Guided debit-card on-ramp preview/submit flow
 owlp tx list                # Transaction history
 owlp status                 # Account, wallet, and KYC readiness
 owlp --help                 # All commands
 ```
 
-Every command accepts `--json` for machine-readable output. Multi-step flows (`send`, `onboard`, `kyc submit`) stream NDJSON events.
+Every command accepts `--json` for machine-readable output. Multi-step flows (`send`, `deposit`, `onboard`, `kyc submit`) stream NDJSON events.
 
 ## Key Features
 
 - **Agent-first, not agent-tolerant** — `--json` on every command, NDJSON event streams for multi-step flows, auto-detected agent mode
 - **Keys never leave your machine** — mnemonic generated locally, transactions signed client-side
 - **One mnemonic, three chains** — EVM, Stellar, Solana addresses derived from a single seed
-- **Browser only when it has to** — login and KYC open the browser; everything else stays in terminal
+- **Debit-card deposit MVP** — card binding, quote, preview, confirmed submit, and transaction watch
+- **Browser only when it has to** — login, KYC, and card binding open the browser; everything else stays in terminal
 
 ## Agent Skill
 
 The [`skills/`](skills/) directory contains the full agent skill — command reference, JSON response shapes, onboarding flow, and common workflows. Agents read this to operate `owlp` autonomously.
 
 - [`skills/SKILL.md`](skills/SKILL.md) — Main skill: installation, first-run checklist, environment, authentication, workflows
-- [`skills/commands/*.md`](skills/commands/) — Per-command reference (13 files)
+- [`skills/commands/*.md`](skills/commands/) — Per-command reference
 
 ## Issues & Feedback
 

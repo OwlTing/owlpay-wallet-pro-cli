@@ -42,26 +42,28 @@ owlp onboard
 ```bash
 owlp balance                # 查詢各鏈餘額
 owlp send --to <addr> --amount 10 --token USDC --chain stellar
+owlp deposit                # Debit-card 入金預覽與送出流程
 owlp tx list                # 交易紀錄
 owlp status                 # 帳號、錢包、KYC 狀態
 owlp --help                 # 所有指令
 ```
 
-每個指令都支援 `--json` 取得機器可讀輸出。多步驟流程（`send`、`onboard`、`kyc submit`）以 NDJSON 事件串流。
+每個指令都支援 `--json` 取得機器可讀輸出。多步驟流程（`send`、`deposit`、`onboard`、`kyc submit`）以 NDJSON 事件串流。
 
 ## 主要特色
 
 - **Agent 優先，不只是相容** —— 每個指令都有 `--json`，多步驟流程以 NDJSON 事件串流，自動偵測 Agent 模式
 - **私鑰永不離開你的裝置** —— 助記詞在本地產生，交易在客戶端簽署
 - **一組助記詞，三條鏈** —— 從單一種子衍生 EVM、Stellar、Solana 地址
-- **只在必要時開瀏覽器** —— 登入與 KYC 走瀏覽器，其餘操作都在終端機完成
+- **Debit-card deposit MVP** —— 支援卡片綁定、報價、預覽、確認送出與交易追蹤
+- **只在必要時開瀏覽器** —— 登入、KYC 與卡片綁定走瀏覽器，其餘操作都在終端機完成
 
 ## Agent Skill
 
 [`skills/`](skills/) 目錄包含完整的 Agent Skill —— 指令參考、JSON 回應格式、新手流程及常見工作流。Agent 透過閱讀這些檔案自主操作 `owlp`。
 
 - [`skills/SKILL.md`](skills/SKILL.md) — 主 Skill：安裝、首次使用、環境、驗證、工作流
-- [`skills/commands/*.md`](skills/commands/) — 各指令詳細參考（13 個檔案）
+- [`skills/commands/*.md`](skills/commands/) — 各指令詳細參考
 
 ## Issues 與回饋
 
