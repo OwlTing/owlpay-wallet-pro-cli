@@ -59,7 +59,7 @@ Wrapped in `{success, env, data}`:
 | `unverified` | `false` | Not yet submitted |
 | `unfinished` | `false` | Started but not completed |
 | `finished` | `false` | Submitted, pending review |
-| `rejected` | `false` | Rejected — can resubmit |
+| `rejected` | `false` | Rejected — polling continues, user can resubmit via browser |
 | `declined` | `false` | Declined |
 | `revoked` | `false` | Previously verified, now revoked |
 | `banned` | `false` | Account banned |
@@ -108,7 +108,7 @@ Wrapped in `{success, env, data}`:
 
 `complete.result` shape: `{ status: string, verified: boolean }`.
 
-Short-circuits immediately if the current status is already `verified`. Polling stops when status reaches any terminal state: `verified`, `rejected`, `banned`, `declined`, `revoked`.
+Short-circuits immediately if the current status is already `verified`. Polling stops when status reaches any terminal state: `verified`, `banned`, `declined`, `revoked`. Note: `rejected` is **not** a terminal state — polling continues so the user can resubmit via browser.
 
 ## KYC Guard (`requireKyc`)
 
