@@ -103,7 +103,7 @@ Display the `url` and ask the user to open it and complete identity verification
 RESULT=$(owlp kyc wait --json 2>/dev/null) && echo "$RESULT" | tail -1 | jq '.result | {status, verified}'
 ```
 
-Terminal states that stop polling: `verified`, `rejected`, `banned`, `declined`, `revoked`.
+Terminal states that stop polling: `verified`, `banned`, `declined`, `revoked`. Note: `rejected` is **not** a terminal state — polling continues so the user can resubmit via browser.
 
 ### Summary
 

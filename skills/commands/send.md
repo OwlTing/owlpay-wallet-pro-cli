@@ -20,6 +20,10 @@ Requires login. Always run preview first to inspect fees before submitting.
 | `--memo <text>` | No | Memo / tag (Stellar and Solana) |
 | `--confirm` | No | In agent mode: sign and submit (omit for preview only). In TTY mode: skip the `Proceed?` prompt. |
 
+Native chain coins may be passed either as `native` or by chain symbol:
+`ETH` on `ethereum`, `XLM` on `stellar`, and `SOL` on `solana`.
+The CLI normalizes these aliases to the backend native-transfer contract.
+
 In agent mode, a missing required flag throws `BusinessError('INPUT_REQUIRED')` with a message naming the flag. In TTY mode, missing flags are collected interactively instead.
 
 ## Commands

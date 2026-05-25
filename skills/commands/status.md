@@ -7,8 +7,13 @@ Unlike other authenticated commands, `status` is **non-throwing** — when the u
 ## Commands
 
 ```bash
-owlp status --json   # Full status dashboard
+owlp status --json          # Full status dashboard
+owlp status -v --json       # Verbose: includes IDs, workspace metadata
 ```
+
+| Flag | Description |
+|------|-------------|
+| `-v, --verbose` | Show additional identifiers and metadata (human mode only — JSON response is unchanged) |
 
 **Agent execution** — always capture output (SKILL.md § Output Discipline):
 
