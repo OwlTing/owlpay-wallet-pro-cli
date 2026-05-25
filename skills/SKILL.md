@@ -4,7 +4,7 @@ description: Use the OwlPay Wallet Pro CLI (owlp) to manage crypto wallets, chec
 license: Apache-2.0
 metadata:
   author: owlpay
-  version: "0.5.16"
+  version: "0.6.0"
 ---
 
 OwlPay Wallet Pro CLI agent skill.
@@ -25,7 +25,7 @@ If the command is not found:
 
 ```bash
 npm install -g @owlpay/owlp-cli
-owlp -V   # should print "OwlPay Wallet Pro CLI v0.5.16" or later
+owlp -V   # should print "OwlPay Wallet Pro CLI v0.6.0" or later
 ```
 
 ### First-Run Checklist
@@ -79,7 +79,7 @@ Commands fall into two categories based on whether they need to reach the OwlPay
 `-V`, `env get`, `env set`, `auth logout`, `wallet create`, `wallet import`, `wallet list`, `wallet rename`, `wallet switch`, `wallet export-key`, `wallet reset`
 
 **Online** (hits OwlPay API — fails with `NETWORK_ERROR` / exit code 4 when unreachable):
-`auth login`, `auth status`, `status`, `balance`, `send`, `tx list`, `tx detail`, `chains`, `tokens`, `countries`, `verify`, `kyc status`, `kyc submit`
+`auth login`, `auth status`, `status`, `balance`, `send`, `tx list`, `tx detail`, `chains`, `tokens`, `countries`, `verify`, `kyc status`, `kyc submit`, `deposit start`, `deposit card add`, `deposit card list`, `deposit quote`, `deposit submit`, `deposit watch`
 
 **Online (npm registry)** — does not hit OwlPay API but requires npm registry access:
 `update`
@@ -180,6 +180,7 @@ Read the relevant file before executing a command:
 - `skills/commands/balance.md` — Balance queries across chains and tokens
 - `skills/commands/tx.md` — Transaction history, filters, pagination, and detail
 - `skills/commands/send.md` — Send tokens (preview + submit), NDJSON event stream
+- `skills/commands/deposit.md` — Deposit (on-ramp): card binding, quote, submit, watch — debit-card method only this milestone
 - `skills/commands/chains.md` — Supported chains and tokens
 - `skills/commands/verify.md` — Address verification and chain auto-detection
 - `skills/commands/countries.md` — Countries allowed for individual registration
