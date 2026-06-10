@@ -168,9 +168,11 @@ Without `--confirm`, NDJSON emits a `submit.preview` event and `complete.result.
 ```
 {"type":"meta.env",...}
 {"type":"submit.validating","ts":...}
-{"type":"submit.done","tx_uuid":"...","state":"created","ts":...}
-{"type":"complete","result":{"txUuid":"...","serialNumber":"SN-...","state":"created"},"ts":...}
+{"type":"submit.done","tx_uuid":"...","state":"created","next_action":"confirm_via_email","next_action_message":"Check your email and confirm this deposit. It stays pending until confirmed.","ts":...}
+{"type":"complete","result":{"txUuid":"...","serialNumber":"SN-...","state":"created","nextAction":"confirm_via_email","nextActionMessage":"Check your email and confirm this deposit. It stays pending until confirmed."},"ts":...}
 ```
+
+When the success output carries `next_action: "confirm_via_email"` (on `submit.done`; `nextAction` on `complete.result`), the user must open their email and click the confirmation link before the transaction progresses — the agent MUST remind the user of this and explain the transaction stays in its current state until confirmed. `next_action_message` / `nextActionMessage` carries a relayable sentence for that reminder; branch logic should key on `next_action`, not on the message text. The fields are provider-declared (debit-card sets them); when absent, no reminder is needed. Idempotent replays carry the fields too; dry-run previews never do.
 
 If the same `--idempotency-key` is replayed with identical args within 24h, the cached envelope is returned with `idempotentReplay: true`. Same key + different args → exit 3 `IDEMPOTENCY_KEY_REUSED`.
 
@@ -213,6 +215,7 @@ Terminal mapping:
 - Prefer running one direct `owlp ... --json` command and reading the NDJSON events from the command output. Do not wrap normal user-facing runs in multi-line shell snippets with `OUT=...`, `CODE=$?`, `printf`, or `jq`; those wrappers are noisy in visible agent terminals. Use `jq` only when the user explicitly asks for machine extraction or when a script needs it.
 - For `deposit card add --json`, surface the `card.browser_required.url` to the user and explain that the command exits with `CARD_BINDING_BROWSER_REQUIRED` until a human completes the hosted browser flow.
 - **`card add` complete**: Confirm binding succeeded, name the card (`last4_digits` + `card_company`), and suggest `owlp deposit quote` next.
+- **`submit` complete with `next_action: "confirm_via_email"`**: Tell the user to check their email and click the confirmation link — the deposit does not progress until they do. Suggest `owlp deposit watch <tx-uuid>` to track it afterwards.
 - **`quote.done`**: Report `source_amount → destination_amount`, `effective_rate`, `expires_at`. Suggest `submit --quote-id <q> --confirm`.
 - **`submit.done`** (with `--confirm`): Report `tx_uuid`, suggest `owlp deposit watch <tx-uuid>` to follow it.
 - **`watch.done` completed**: Report `tx_hash` and that funds are confirmed.
