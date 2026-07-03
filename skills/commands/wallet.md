@@ -13,7 +13,7 @@ owlp wallet import [--name <name>] [--mnemonic "<12 words>"]    # Import from 12
 owlp wallet list --json                                         # List all wallets
 owlp wallet rename <current> <new-name> --json                  # Rename a wallet
 owlp wallet switch <name-or-address> --json                     # Change default wallet
-owlp wallet export-key --chain <chain> [--yes] --json           # Export private key
+owlp wallet export-key --chain <chain> [--confirm] --json       # Export private key
 owlp wallet reset [--force]                                     # Remove ALL local wallets
 ```
 
@@ -23,7 +23,7 @@ owlp wallet reset [--force]                                     # Remove ALL loc
 RESULT=$(owlp wallet list --json 2>/dev/null) && echo "$RESULT" | jq -r '.data.wallets[] | "\(.name) — \(.chains.ethereum)"'
 ```
 
-> **Security note**: `export-key` prompts for confirmation unless `--yes` is passed. In **human mode**, `wallet import` reads the mnemonic interactively with a masked prompt (never pass it on the CLI — it would land in shell history). In **agent mode** (`--json` / non-TTY) there is no prompt — pass `--mnemonic "<12 words>"` or the command throws `MNEMONIC_REQUIRED` (exit 3). Never log or share the returned private key or mnemonic.
+> **Security note**: `export-key` prompts for confirmation unless `--confirm` is passed (`--yes` is a deprecated alias, still accepted). In **human mode**, `wallet import` reads the mnemonic interactively with a masked prompt (never pass it on the CLI — it would land in shell history). In **agent mode** (`--json` / non-TTY) there is no prompt — pass `--mnemonic "<12 words>"` or the command throws `MNEMONIC_REQUIRED` (exit 3). Never log or share the returned private key or mnemonic.
 >
 > **⚠️ Agent onboarding — wallet step requires explicit user consent.** Before running `wallet create` or `wallet import` as part of onboarding, display a security warning and confirm the user wants agent-driven setup. Recommend they run `owlp wallet create` / `owlp wallet import` themselves in a TTY instead — this keeps the mnemonic off the network and out of AI context. `wallet create` is safer in agent mode (only addresses are returned; mnemonic is shown locally). Running `wallet import --mnemonic ...` as an agent exposes the mnemonic in AI context — only do this if the user explicitly accepts that risk.
 

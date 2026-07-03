@@ -4,7 +4,7 @@ description: Use the OwlPay Wallet Pro CLI (owlp) to manage crypto wallets, chec
 license: Apache-2.0
 metadata:
   author: owlpay
-  version: "0.6.1"
+  version: "0.7.0"
 ---
 
 OwlPay Wallet Pro CLI agent skill.
@@ -25,7 +25,7 @@ If the command is not found:
 
 ```bash
 npm install -g @owlpay/owlp-cli
-owlp -V   # should print "OwlPay Wallet Pro CLI v0.6.1" or later
+owlp -V   # should print "OwlPay Wallet Pro CLI v0.7.0" or later
 ```
 
 ### First-Run Checklist
@@ -79,7 +79,7 @@ Commands fall into two categories based on whether they need to reach the OwlPay
 `-V`, `env get`, `env set`, `auth logout`, `wallet create`, `wallet import`, `wallet list`, `wallet rename`, `wallet switch`, `wallet export-key`, `wallet reset`
 
 **Online** (hits OwlPay API — fails with `NETWORK_ERROR` / exit code 4 when unreachable):
-`auth login`, `auth status`, `status`, `balance`, `send`, `tx list`, `tx detail`, `chains`, `tokens`, `countries`, `verify`, `kyc status`, `kyc submit`, `deposit start`, `deposit card add`, `deposit card list`, `deposit quote`, `deposit submit`, `deposit watch`
+`auth login`, `auth status`, `status`, `balance`, `send`, `pay`, `tx list`, `tx detail`, `chains`, `tokens`, `countries`, `verify`, `kyc status`, `kyc submit`, `deposit start`, `deposit card add`, `deposit card list`, `deposit quote`, `deposit submit`, `deposit watch`
 
 **Online (npm registry)** — does not hit OwlPay API but requires npm registry access:
 `update`
@@ -152,7 +152,7 @@ When a newer version of `@owlpay/owlp-cli` is available, the envelope may includ
 
 When you see the `update` field in a response, mention to the user that a newer version is available and suggest running `owlp update`.
 
-Event-stream commands (`send`, `kyc submit`, `onboard` registration) emit **NDJSON** instead: one `{"type":"meta.env",...}` line, then one JSON line per event, then a `{"type":"complete","result":...}` line. The `meta.env` line may also include the `update` field when a newer version is available. Parse line-by-line, not as a single object. See `send.md` and `kyc.md` for details.
+Event-stream commands (`send`, `pay`, `kyc submit`, `onboard` registration) emit **NDJSON** instead: one `{"type":"meta.env",...}` line, then one JSON line per event, then a `{"type":"complete","result":...}` line. The `meta.env` line may also include the `update` field when a newer version is available. Parse line-by-line, not as a single object. See `send.md` and `kyc.md` for details.
 
 ## Authentication
 
@@ -180,6 +180,7 @@ Read the relevant file before executing a command:
 - `skills/commands/balance.md` — Balance queries across chains and tokens
 - `skills/commands/tx.md` — Transaction history, filters, pagination, and detail
 - `skills/commands/send.md` — Send tokens (preview + submit), NDJSON event stream
+- `skills/commands/pay.md` — Pay an x402 resource / OwlPay checkout link (EIP-3009 sign; facilitator pays gas), NDJSON event stream
 - `skills/commands/deposit.md` — Deposit (on-ramp): card binding, quote, submit, watch — debit-card method only this milestone
 - `skills/commands/chains.md` — Supported chains and tokens
 - `skills/commands/verify.md` — Address verification and chain auto-detection
@@ -225,6 +226,21 @@ RESULT=$(owlp tx detail <id> --json 2>/dev/null) && echo "$RESULT" | jq '.data.d
 # Poll until data.detail.state === "completed" && data.detail.order.blockchain_transaction.state === "confirmed"
 # (send envelope only — see skills/commands/tx.md for per-type field tables)
 ```
+
+### Pay an x402 resource / OwlPay checkout
+
+```bash
+# 1. Inspect (read-only): amount, payTo, status, and required KYC fields — no wallet/sign
+RESULT=$(owlp pay <url> --inspect --json 2>/dev/null) && echo "$RESULT" | jq '.data | {provider, intent, challenge}'
+
+# 2. Preview (Harbor: enable + challenge; stops before signing without --confirm). NDJSON — take the last line
+RESULT=$(owlp pay <url> --kyc '{...user_information...}' --json 2>/dev/null) && echo "$RESULT" | tail -1 | jq '.result'
+
+# 3. Settle (sign EIP-3009 + facilitator broadcasts). Guard the amount with --max-amount
+RESULT=$(owlp pay <url> --kyc '{...}' --max-amount <usdc> --confirm --json 2>/dev/null) && echo "$RESULT" | tail -1 | jq '.result | {transactionHash, amount, symbol, network}'
+```
+
+Payer wallet needs only USDC (≥ the amount) — the facilitator pays gas. See `skills/commands/pay.md` for the event stream, KYC input (`--kyc`/`--kyc-file`), and error codes.
 
 ### Check KYC Before Off-Ramp
 
