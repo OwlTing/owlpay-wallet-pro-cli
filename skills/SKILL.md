@@ -260,6 +260,21 @@ When presenting command results to the user, follow these principles:
 4. **Sensitive operations: warn before executing.** Before running `wallet create`, `wallet import`, or `wallet export-key`, explain the risks (mnemonic loss, private key exposure) and ask the user to confirm. Do not execute the command first and warn after.
 5. **Respect the command's `## Agent Response` section.** Individual command docs may include an `## Agent Response` section with specific guidance on what to highlight and how to present results. Follow those instructions; they override these general principles where they differ.
 
+## Machine-Readable Error & Resume Contract
+
+Error events (NDJSON `{"type":"error",...}`) and JSON error envelopes may carry these optional fields — prefer them over parsing `message`:
+
+- `hintAction` — human-readable next step (safe to relay verbatim).
+- `missing` — array of required flags that were not provided (e.g. `["--chain","--to"]`). `INPUT_REQUIRED` validation collects **all** missing flags in one error, so a single retry with every listed flag suffices. Flag validation runs before the event stream starts, so `missing` arrives on the JSON error envelope (`{"error":true,...,"missing":[...]}`), not as a stream event.
+- `next_action` + `resume_command` — emitted by flows that pause for browser interaction, with `next_action: "complete_in_browser_then_resume"` and a ready-to-run `resume_command` string. The same fields appear on the pausing event itself (`auth.code_required`, `kyc.browser_required`, `card.browser_required`), so one generic handler covers all three flows: surface the URL to the user, wait for them to finish in the browser, then run `resume_command`. Always branch on the `next_action` **value** — other values exist (deposit submit success emits `next_action: "confirm_via_email"`; see `skills/commands/deposit.md`).
+
+For money-moving commands (`send`, `pay`), pass `--idempotency-key <key>` so a re-run with the same key and args returns the cached result with `"idempotentReplay": true` instead of transferring twice. Deposit submit does this by default; `send`/`pay` only do it when a key is explicitly provided. Know the limits of this protection:
+
+- It covers re-runs after a **received success** (agent crash after the result arrived, duplicate invocation). It does **not** cover a request that was dispatched but whose response was lost (timeout mid-submit): nothing was recorded, so a blind retry can transfer twice. On an unknown outcome, verify state first — `owlp tx list --json` for send, the payment-intent status for pay — before retrying.
+- Use **one key per intended payment**, generated fresh (e.g. UUID). Never derive the key from the resource URL alone: paying the same `pay` URL twice on purpose with a reused key silently replays the old settlement instead of paying.
+- Don't run concurrent invocations with the same key — the store has no lock; wait for the first to exit before retrying.
+- Retry with byte-identical args; the args hash is over the raw strings (whitespace around values and chain casing are normalized, other formatting differences like `10` vs `10.0` are not).
+
 ## Data Storage
 
 Local files under `~/.owlpay-wallet-pro/`:

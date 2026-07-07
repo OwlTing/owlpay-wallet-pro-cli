@@ -27,6 +27,13 @@ Requires a wallet (`owlp wallet create`/`import`); the EVM account (`m/44'/60'/0
 | `--max-amount <usdc>` | Reject (even with `--confirm`) if the challenge amount exceeds this |
 | `--inspect` | Read-only: show requirements + intent/challenge; no wallet/KYC/enable/sign |
 | `--confirm` | Agent: sign + settle. TTY: skip the confirm prompt |
+| `--idempotency-key <key>` | Replay protection: re-running with the same key + args returns the cached settlement (`idempotentReplay: true`) instead of paying again. Recommended whenever an agent might retry |
+
+**Idempotency:** client-side, 24h window, env-scoped; the args hash covers `{url, from, chain}`. Same key + same args → cached settlement, no new signing/settling; the replayed stream contains only `meta.env` and `complete` with `"idempotentReplay": true`. Same key + different args → exit 3 `IDEMPOTENCY_KEY_REUSED`. Without a key nothing is recorded. Limits:
+
+- A settle **rejected by the server** records nothing, so retrying with the same key is safe. A settle whose response was **lost** (timeout after dispatch) also records nothing — but the payment may have gone through; verify the payment intent status before retrying, and never auto-retry a dispatched settle.
+- Use one **fresh key per intended payment**. Standard x402 resource URLs are stable, so paying the same URL twice on purpose with a reused key replays the old settlement (stale `transactionHash` reported as success, `--max-amount` never re-checked) instead of paying.
+- Retry with the **same `--chain` value** you used originally — the requested chain family is part of the args hash, so switching it (e.g. after the "intent settles on X" warning) trips `IDEMPOTENCY_KEY_REUSED` instead of replaying. The warning is informational; the challenge network decides actual signing regardless of `--chain`.
 
 **KYC precedence:** `--kyc` (inline) > `--kyc-file` > persisted profile. Both `--kyc` and `--kyc-file` accept either `{ "user_information": {...} }` or a bare `user_information` object. Required fields come from the runtime requirements schema (emitted on the `pay.requirements` event) — typically `applicant`, `country`, `email`, plus individual/company conditionals.
 
