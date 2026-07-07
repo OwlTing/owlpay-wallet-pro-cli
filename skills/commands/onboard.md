@@ -39,8 +39,8 @@ In TTY mode, Step 1 works as follows:
 ### Step 1 — Account Auth (two CLI invocations)
 
 **First invocation** — `owlp onboard --json`:
-- Emits `{"type":"auth.code_required","loginUrl":"<url>","sessionId":"<id>"}`
-- Exits with code 3 (`AUTH_CODE_REQUIRED`)
+- Emits `{"type":"auth.code_required","loginUrl":"<url>","sessionId":"<id>","next_action":"complete_in_browser_then_resume","resume_command":"owlp onboard --json --auth-code <CODE>"}`
+- Exits with code 3 (`AUTH_CODE_REQUIRED`); the error event carries the same `next_action`/`resume_command`
 - Display the `loginUrl` and ask the user to open it, complete login, and read the passcode shown in the browser (format: `WORD-NNNN`, e.g. `WOLF-3842`)
 
 **Second invocation** — `owlp onboard --json --auth-code WOLF-3842`:
@@ -52,6 +52,8 @@ In TTY mode, Step 1 works as follows:
 ```json
 {"type":"error","code":"INVALID_AUTH_CODE","message":"..."}
 ```
+
+**CLI service unreachable** — exits code 4 with `CLI_SERVICE_UNREACHABLE` and a `hintAction` naming the origin. The auth (and KYC) browser handoff needs the companion cli-service; on local stage setups it must be running (`npm run dev:stage` in owlp-cli-service). Retryable once the service is up.
 
 **Already authenticated** — skips auth and exits 0 immediately. Proceed to Step 2.
 
@@ -85,16 +87,16 @@ If the user agrees:
 
 **3a.** Run `owlp kyc submit --json` — emits the KYC browser URL then exits:
 ```
-{"type":"kyc.browser_required","url":"https://<cliServiceUrl>/app/kyc?access_token=...","ts":...}
+{"type":"kyc.browser_required","url":"https://<cliServiceUrl>/app/kyc?session=...","ts":...}
 # exits 3 — code: KYC_BROWSER_REQUIRED
 ```
 Display the `url` and ask the user to open it and complete identity verification.
 
 **3b.** When the user confirms they have finished in the browser, run `owlp kyc wait --json`:
 ```
-{"type":"kyc_poll.progress","attempt":1,"status":"finished","ts":...}
+{"type":"kyc.poll.progress","attempt":1,"status":"finished","ts":...}
 ...
-{"type":"kyc_poll.done","finalStatus":"verified","ts":...}
+{"type":"kyc.poll.done","finalStatus":"verified","ts":...}
 {"type":"complete","result":{"status":"verified","verified":true},"ts":...}
 ```
 
@@ -139,7 +141,7 @@ Only proceed to Step 2 if the user explicitly confirms they want the agent to ha
 
 **Agent mode** (`owlp onboard --json`): Emits NDJSON (one JSON object per line). Only auth events are emitted — wallet and KYC are separate commands:
 - `{"type":"meta.env","env":"prod","endpoints":{...}}` — prepended automatically
-- First invocation: `{"type":"auth.code_required","loginUrl":"<url>","sessionId":"<id>"}` then exits 3
+- First invocation: `{"type":"auth.code_required","loginUrl":"<url>","sessionId":"<id>","next_action":"complete_in_browser_then_resume","resume_command":"owlp onboard --json --auth-code <CODE>"}` then exits 3
 - Second invocation (after `--auth-code`): `{"type":"auth.done","email":"<email>"}` then `{"type":"complete","result":{"email":"<email>"}}` then exits 0
 
 ## When to Use

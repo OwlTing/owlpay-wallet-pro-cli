@@ -19,7 +19,7 @@ Environment handling follows the global CLI contract: `--stage`, `owlp env set s
 
 ## Operating modes
 
-- **Agent mode** — `--json`, non-TTY stdio, or `CLAUDECODE` / `CI` / `CURSOR_AGENT` env. NDJSON event streams; missing required flags throw `INPUT_REQUIRED` (exit 3).
+- **Agent mode** — `--json`, non-TTY stdio, or `CLAUDECODE` / `CI` / `CURSOR_AGENT` env. NDJSON event streams; missing required flags throw a single `INPUT_REQUIRED` (exit 3) listing **all** missing flags, with a machine-readable `missing` array on the JSON error envelope (e.g. `"missing":["--chain","--source-amount|--destination-amount"]`) — one retry with every listed flag suffices.
 - **TTY human mode** — same flag set, but `card add` opens the browser and prints a URL fallback to stderr.
 
 ## Currency contract (verified)
@@ -36,7 +36,7 @@ Environment handling follows the global CLI contract: `--stage`, `owlp env set s
 | `--failed-url <url>` | Optional redirect on binding failure |
 | `--no-browser` | TTY only: skip auto-open |
 | `--idempotency-key <key>` | Replay-safe key (default: random UUID; server has `idempotency.key` middleware) |
-| `--timeout <ms>` | Polling timeout in ms (default: 1800000 = 30 min, matches `CARD_BINDING_LINK_TTL`) |
+| `--timeout <duration>` | Polling timeout — accepts `45m`/`90s`/`1h` or plain ms (default: 30m, matches `CARD_BINDING_LINK_TTL`) |
 
 NDJSON sequence (TTY happy path):
 
@@ -54,8 +54,8 @@ Agent mode cannot perform the browser interaction. It emits the binding URL and 
 ```
 {"type":"meta.env",...}
 {"type":"card.binding_url","url":"https://...","card_id":"<uuid>","ts":...}
-{"type":"card.browser_required","url":"https://...","ts":...}
-{"type":"error","code":"CARD_BINDING_BROWSER_REQUIRED","message":"Card binding requires browser interaction. Visit the URL, complete card binding, then run `owlp deposit card list`.","exitCode":3,"ts":...}
+{"type":"card.browser_required","url":"https://...","next_action":"complete_in_browser_then_resume","resume_command":"owlp deposit card list --json","ts":...}
+{"type":"error","code":"CARD_BINDING_BROWSER_REQUIRED","message":"Card binding requires browser interaction. Visit the URL, complete card binding, then run `owlp deposit card list`.","exitCode":3,"ts":...,"hintAction":"Complete card binding in the browser, then run `owlp deposit card list --json`.","next_action":"complete_in_browser_then_resume","resume_command":"owlp deposit card list --json"}
 ```
 
 Failure terminal: `expired | disabled | restricted` → `card.binding_failed` → exit 3 `CARD_BINDING_FAILED`.
@@ -191,7 +191,7 @@ Errors mapped from verified backend exceptions:
 
 | Option | Description |
 |--------|-------------|
-| `--timeout <ms>` | Total timeout in ms (default: 3600000 = 60 min) |
+| `--timeout <duration>` | Total timeout — accepts `45m`/`90s`/`1h` or plain ms (default: 60m) |
 
 Polls `GET /v1/transaction/<uuid>` every 3000 ms. Each poll yields a `watch.progress` event with the verified `state` (one of: `init, created, failed, in_review, chain_in_process, wait_for_funds_confirmation, wait_for_user_offline_action, fiat_in_process, completed, refunded, information_required`).
 

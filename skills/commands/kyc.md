@@ -10,7 +10,7 @@ Requires login.
 owlp kyc status --json        # Check KYC status
 owlp kyc submit               # Start KYC (opens browser, waits for callback)
 owlp kyc submit --json        # Agent: emit browser URL then exit 3 (KYC_BROWSER_REQUIRED)
-owlp kyc wait --json          # Agent: poll integrated-status until terminal state
+owlp kyc wait --json          # Agent: poll integrated-status until terminal state (--timeout 45m; default 30m)
 ```
 
 **Agent execution** — always capture output (SKILL.md § Output Discipline):
@@ -72,22 +72,26 @@ Wrapped in `{success, env, data}`:
 
 ```
 {"type":"meta.env","env":"prod","endpoints":{...}}
-{"type":"kyc_fetch.start","ts":...}
-{"type":"kyc_fetch.done","currentStatus":"unverified","ts":...}
-{"type":"kyc.browser_required","url":"https://<cliServiceUrl>/app/kyc?access_token=...","ts":...}
-# exits 3 — code: KYC_BROWSER_REQUIRED
+{"type":"kyc.fetch.start","ts":...}
+{"type":"kyc.fetch.done","currentStatus":"unverified","ts":...}
+{"type":"kyc.browser_required","url":"https://<cliServiceUrl>/app/kyc?session=...","next_action":"complete_in_browser_then_resume","resume_command":"owlp kyc wait --json","ts":...}
+# exits 3 — code: KYC_BROWSER_REQUIRED (error event carries the same next_action/resume_command)
 ```
+
+**The URL is single-use and expires ~10 minutes after issuance** (it carries a one-time session id, not a token). Relay it to the user promptly; if they click too late or reload the page, re-run `owlp kyc submit --json` to mint a fresh one.
+
+**Cross-device handoff:** the verification widget itself (Sumsub) offers a "continue on your phone" option after the page loads — users who prefer photographing documents with their phone can switch devices inside the flow. No separate URL or QR from the CLI side is needed; `owlp kyc wait` polls the same way regardless of device.
 
 **TTY mode** (human) — opens browser, polls inline:
 
 ```
 {"type":"meta.env","env":"prod","endpoints":{...}}
-{"type":"kyc_fetch.start","ts":...}
-{"type":"kyc_fetch.done","currentStatus":"unverified","ts":...}
-{"type":"kyc_poll.start","ts":...}
-{"type":"kyc_poll.progress","attempt":1,"status":"finished","ts":...}
+{"type":"kyc.fetch.start","ts":...}
+{"type":"kyc.fetch.done","currentStatus":"unverified","ts":...}
+{"type":"kyc.poll.start","ts":...}
+{"type":"kyc.poll.progress","attempt":1,"status":"finished","ts":...}
 ...
-{"type":"kyc_poll.done","finalStatus":"verified","ts":...}
+{"type":"kyc.poll.done","finalStatus":"verified","ts":...}
 {"type":"complete","result":{"status":"verified","verified":true},"ts":...}
 ```
 
@@ -97,18 +101,33 @@ Wrapped in `{success, env, data}`:
 
 ```
 {"type":"meta.env","env":"prod","endpoints":{...}}
-{"type":"kyc_fetch.start","ts":...}
-{"type":"kyc_fetch.done","currentStatus":"finished","ts":...}
-{"type":"kyc_poll.start","ts":...}
-{"type":"kyc_poll.progress","attempt":1,"status":"finished","ts":...}
+{"type":"kyc.fetch.start","ts":...}
+{"type":"kyc.fetch.done","currentStatus":"finished","ts":...}
+{"type":"kyc.poll.start","ts":...}
+{"type":"kyc.poll.progress","attempt":1,"status":"finished","ts":...}
 ...
-{"type":"kyc_poll.done","finalStatus":"verified","ts":...}
+{"type":"kyc.poll.done","finalStatus":"verified","ts":...}
 {"type":"complete","result":{"status":"verified","verified":true},"ts":...}
 ```
 
 `complete.result` shape: `{ status: string, verified: boolean }`.
 
 Short-circuits immediately if the current status is already `verified`. Polling stops when status reaches any terminal state: `verified`, `banned`, `declined`, `revoked`. Note: `rejected` is **not** a terminal state — polling continues so the user can resubmit via browser.
+
+### Timeout
+
+`kyc submit` / `kyc wait` (and onboard step 3) give up after **30 minutes** without a terminal status (override with `--timeout <duration>`, e.g. `45m`, `90s`, or plain ms). On timeout the stream emits a final event then exits 3 with `KYC_WAIT_TIMEOUT`:
+
+```
+{"type":"kyc.poll.timeout","elapsedMs":1800000,"lastStatus":"finished","ts":...}
+{"type":"error","code":"KYC_WAIT_TIMEOUT","message":"...","exitCode":3,"ts":...}
+```
+
+This is benign and retryable — check later with `owlp kyc status --json` or re-run `owlp kyc wait --json`; do not treat it as a fatal unknown error.
+
+### Other error codes
+
+- `KYC_SESSION_CREATE_FAILED` (exit 3): the CLI could not create the single-use browser session on the CLI service (service down/unreachable). Retry `owlp kyc submit` once the service is reachable.
 
 ## KYC Guard (`requireKyc`)
 

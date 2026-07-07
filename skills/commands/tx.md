@@ -19,6 +19,7 @@ owlp tx list --type send --json           # Filter by type
 owlp tx list --type receive --json
 owlp tx list --page 2 --json              # Pagination
 owlp tx list --wallet my-wallet --json    # Use a non-default wallet
+owlp tx list --per-page 20 --page 2 --json # Pagination (default 10/page)
 owlp tx detail <id> --json                # Full details of one transaction (positional id required)
 ```
 
