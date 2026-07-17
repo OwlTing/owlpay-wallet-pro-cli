@@ -15,15 +15,22 @@ Requires login. Always run preview first to inspect fees before submitting.
 |--------|------------------|-------------|
 | `--to <address>` | Yes | Destination address |
 | `--amount <number>` | Yes | Amount to send |
-| `--token <token>` | Yes | Token symbol (`USDC`, `ETH`, `XLM`, `SOL`, or `native`) |
-| `--chain <chain>` | Yes | `ethereum`, `stellar`, or `solana` |
+| `--token <token>` | Yes | Token symbol (`USDC`, a native symbol like `ETH`/`POL`/`AVAX`/`XLM`/`SOL`, or `native`) |
+| `--chain <chain>` | Yes | `ethereum`, `avalanche`, `polygon`, `optimism`, `arbitrum`, `stellar`, or `solana` |
 | `--memo <text>` | No | Memo / tag (Stellar and Solana) |
 | `--confirm` | No | In agent mode: sign and submit (omit for preview only). In TTY mode: skip the `Proceed?` prompt. |
 | `--idempotency-key <key>` | No | Replay protection: re-running with the same key + args returns the cached result (`idempotentReplay: true`) instead of sending again. Recommended whenever an agent might retry. |
 
 Native chain coins may be passed either as `native` or by chain symbol:
-`ETH` on `ethereum`, `XLM` on `stellar`, and `SOL` on `solana`.
+`ETH` on `ethereum`/`arbitrum`/`optimism`, `POL` on `polygon`, `AVAX` on `avalanche`,
+`XLM` on `stellar`, and `SOL` on `solana`.
 The CLI normalizes these aliases to the backend native-transfer contract.
+Note the symbol is per-chain: `--token ETH` on `polygon` is treated as an ERC-20
+token parameter, not the native coin — polygon's native coin is `POL`.
+
+All five EVM chains (`ethereum`, `avalanche`, `polygon`, `optimism`, `arbitrum`)
+share the wallet's single EVM address — the `from` address is identical across
+them; only the network (and its native gas token) differs.
 
 In agent mode, missing required flags throw `BusinessError('INPUT_REQUIRED')` with a single message listing **every** missing flag and a machine-readable `missing` array on the JSON error envelope (e.g. `"missing":["--to","--chain"]`) — retry once with all of them. In TTY mode, missing flags are collected interactively instead.
 

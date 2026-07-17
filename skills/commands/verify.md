@@ -56,9 +56,9 @@ The `chain` field is inferred **locally** from the address format:
 | `T` + 33 Base58 chars | `tron` |
 | other | `null` |
 
-> **Note:** the inferred value is `evm` (not `ethereum`). When passing to `owlp send --chain`, use the CLI flag value `ethereum` instead.
+> **Note:** the inferred value is `evm` (not a specific chain). An `evm` address is valid on every EVM chain `send` supports — `ethereum`, `avalanche`, `polygon`, `optimism`, `arbitrum` — so pick the `--chain` value for the network you intend to transact on (`ethereum` if unsure).
 
-Only `ethereum`, `stellar`, and `solana` are supported by `send`. `tron` is recognized by `verify` but not by other commands.
+`send` supports `ethereum`, `avalanche`, `polygon`, `optimism`, `arbitrum`, `stellar`, and `solana`. `tron` is recognized by `verify` but not by other commands.
 
 ## Notes
 

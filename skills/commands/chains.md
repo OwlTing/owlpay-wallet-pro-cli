@@ -20,7 +20,7 @@ owlp tokens --chain solana --json
 RESULT=$(owlp tokens --chain ethereum --json 2>/dev/null) && echo "$RESULT" | jq -r '.data[] | .symbol'
 ```
 
-Supported `--chain` values: `ethereum`, `stellar`, `solana`.
+Supported `--chain` values: `ethereum`, `avalanche`, `polygon`, `optimism`, `arbitrum`, `stellar`, `solana`.
 
 ## JSON Responses
 

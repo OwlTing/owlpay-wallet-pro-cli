@@ -19,7 +19,11 @@ owlp balance --wallet my-wallet --json              # Use a non-default wallet
 RESULT=$(owlp balance --json 2>/dev/null) && echo "$RESULT" | jq -r '.data[] | "\(.chain) \(.symbol): \(.balance)"'
 ```
 
-Supported chains: `ethereum`, `stellar`, `solana`.
+Supported chains: `ethereum`, `avalanche`, `polygon`, `optimism`, `arbitrum`, `stellar`, `solana`. All five EVM chains share the wallet's single EVM address. A chain the server reports no tokens for simply contributes no rows.
+
+Partial failures degrade gracefully: if a chain/token query fails, the remaining rows are still returned (JSON `data` stays a flat array, exit 0). In `--json` mode the envelope carries a top-level `failures: [{chain, token, message}]` field **only when at least one query failed** — check `.failures` before treating the report as complete (`jq 'has("failures")'`). Each failure is also written as a `⚠` warning line on **stderr in both modes** (diagnostic mirror; parse the envelope, not stderr).
+
+`--address` requires `--chain` (an address is only meaningful on one chain); without it the command exits 3 with `INPUT_REQUIRED`.
 
 ## JSON Response
 
