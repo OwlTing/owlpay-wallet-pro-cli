@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-每個 Agent 都值得擁有一個錢包。給人類與 AI Agent 使用的 CLI 錢包 —— 私鑰在本地，資金你掌握。支援 EVM、Stellar、Solana。
+每個 Agent 都值得擁有一個錢包。給人類與 AI Agent 使用的 CLI 錢包 —— 私鑰在本地，資金你掌握。支援 Ethereum、Avalanche、Polygon、Optimism、Arbitrum、Stellar、Solana。
 
 > 本 Repository 是 `owlp` 的公開入口：Issue 追蹤器、Agent Skill 及文件。CLI 原始碼為閉源；二進位檔透過 npm 發佈。
 
@@ -53,7 +53,7 @@ owlp --help                 # 所有指令
 
 - **Agent 優先，不只是相容** —— 每個指令都有 `--json`，多步驟流程以 NDJSON 事件串流，自動偵測 Agent 模式
 - **私鑰永不離開你的裝置** —— 助記詞在本地產生，交易在客戶端簽署
-- **一組助記詞，三條鏈** —— 從單一種子衍生 EVM、Stellar、Solana 地址
+- **一組助記詞，七條鏈** —— Ethereum、Avalanche、Polygon、Optimism、Arbitrum（共用同一 EVM 地址），加上 Stellar 與 Solana，全部從單一種子衍生
 - **只在必要時開瀏覽器** —— 登入與 KYC 走瀏覽器，其餘操作都在終端機完成
 
 ## Agent Skill

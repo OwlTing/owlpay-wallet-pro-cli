@@ -2,7 +2,7 @@
 
 [繁體中文](README.zh-TW.md)
 
-Every agent deserves a wallet. A CLI wallet for humans and AI agents — keys stay local, funds stay yours. EVM, Stellar, Solana.
+Every agent deserves a wallet. A CLI wallet for humans and AI agents — keys stay local, funds stay yours. Ethereum, Avalanche, Polygon, Optimism, Arbitrum, Stellar, Solana.
 
 > This repository is the public home for `owlp`: issue tracker, agent skill, and documentation. The CLI source is closed-source; the binary is distributed via npm.
 
@@ -53,7 +53,7 @@ Every command accepts `--json` for machine-readable output. Multi-step flows (`s
 
 - **Agent-first, not agent-tolerant** — `--json` on every command, NDJSON event streams for multi-step flows, auto-detected agent mode
 - **Keys never leave your machine** — mnemonic generated locally, transactions signed client-side
-- **One mnemonic, three chains** — EVM, Stellar, Solana addresses derived from a single seed
+- **One mnemonic, seven chains** — Ethereum, Avalanche, Polygon, Optimism, Arbitrum (one shared EVM address), plus Stellar and Solana, all derived from a single seed
 - **Browser only when it has to** — login and KYC open the browser; everything else stays in terminal
 
 ## Agent Skill
